@@ -19,10 +19,10 @@ const Register = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email.endsWith("@babcock.edu.ng")) {
+    if (!email.endsWith("@student.babcock.edu.ng")) {
       toast({
         title: "Invalid email",
-        description: "Please use your @babcock.edu.ng email address",
+        description: "Please use your @student.babcock.edu.ng email address",
         variant: "destructive",
       });
       return;
@@ -84,9 +84,9 @@ const Register = () => {
         </div>
 
         <Card>
-          <CardHeader>
+          <CardHeader>  
             <CardTitle>Create Account</CardTitle>
-            <CardDescription>Sign up with your Babcock email</CardDescription>
+            <CardDescription>Sign up with your Student email</CardDescription>
           </CardHeader>
           <form onSubmit={handleRegister}>
             <CardContent className="space-y-4">
@@ -106,13 +106,13 @@ const Register = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Babcock Email</Label>
+                <Label htmlFor="email">Student Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
-                    placeholder="you@babcock.edu.ng"
+                    placeholder="you@student.babcock.edu.ng"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
