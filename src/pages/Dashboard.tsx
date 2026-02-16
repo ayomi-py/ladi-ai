@@ -213,9 +213,15 @@ const Dashboard = () => {
         </div>
 
         <Tabs defaultValue="products">
-          <TabsList>
-            <TabsTrigger value="products"><Package className="mr-2 h-4 w-4" />My Products</TabsTrigger>
-            <TabsTrigger value="orders"><ShoppingCart className="mr-2 h-4 w-4" />Orders</TabsTrigger>
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="products" className="flex-1 justify-center">
+              <Package className="mr-2 h-4 w-4" />
+              My Products
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="flex-1 justify-center">
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              Orders
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="products" className="mt-4">

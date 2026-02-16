@@ -4,16 +4,19 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
-import ProductDetail from "./pages/ProductDetail";
-import Profile from "./pages/Profile";
-import Dashboard from "./pages/Dashboard";
-import Cart from "./pages/Cart";
-import Orders from "./pages/Orders";
-import NotFound from "./pages/NotFound";
+import Index from "./pages/Index.tsx";
+import Login from "./pages/Login.tsx";
+import Register from "./pages/Register.tsx";
+import ForgotPassword from "./pages/ForgotPassword.tsx";
+import ProductDetail from "./pages/ProductDetail.tsx";
+import Profile from "./pages/Profile.tsx";
+import Dashboard from "./pages/Dashboard.tsx";
+import Cart from "./pages/Cart.tsx";
+import Orders from "./pages/Orders.tsx";
+import NotFound from "./pages/NotFound.tsx";
+import Messages from "./pages/Messages.tsx";
+import Checkout from "./pages/Checkout.tsx";
+import Admin from "./pages/Admin.tsx";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +37,9 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/admin" element={<Admin />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

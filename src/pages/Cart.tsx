@@ -71,86 +71,168 @@ const Cart = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container max-w-2xl py-8">
-        <h1 className="text-2xl font-display font-bold mb-6">Shopping Cart</h1>
+      <main className="container max-w-5xl py-8">
+        <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h1 className="text-2xl font-display font-bold">Shopping cart</h1>
+            <p className="text-sm text-muted-foreground">
+              Review your items before heading to checkout.
+            </p>
+          </div>
+          {cartItems && cartItems.length > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {cartItems.length} item{cartItems.length > 1 ? "s" : ""} in cart
+            </p>
+          )}
+        </div>
 
         {cartItems && cartItems.length > 0 ? (
-          <div className="space-y-4">
-            {cartItems.map((item: any) => {
-              const images: string[] = Array.isArray(item.products?.images) ? item.products.images : [];
-              return (
-                <Card key={item.id}>
-                  <CardContent className="p-4 flex gap-4">
-                    <div className="h-20 w-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                      {images.length > 0 ? (
-                        <img src={images[0]} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="h-full w-full flex items-center justify-center text-muted-foreground text-xs">
-                          No img
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <Link to={`/product/${item.product_id}`}>
-                        <h3 className="font-medium text-sm truncate hover:underline">{item.products?.name}</h3>
-                      </Link>
-                      <p className="text-sm font-semibold mt-1">₦{Number(item.products?.price || 0).toLocaleString()}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <div className="flex items-center border rounded-lg">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => updateQuantity.mutate({ id: item.id, quantity: item.quantity - 1 })}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-8 text-center text-sm">{item.quantity}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() =>
-                              updateQuantity.mutate({
-                                id: item.id,
-                                quantity: Math.min(item.products?.stock || 99, item.quantity + 1),
-                              })
-                            }
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeItem.mutate(item.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    <p className="font-semibold text-sm whitespace-nowrap">
-                      ₦{(Number(item.products?.price || 0) * item.quantity).toLocaleString()}
-                    </p>
-                  </CardContent>
-                </Card>
-              );
-            })}
+          <div className="grid gap-6 lg:grid-cols-[1.8fr,1.1fr]">
+            {/* Items list */}
+            <section className="space-y-4">
+              {cartItems.map((item: any) => {
+                const images: string[] = Array.isArray(item.products?.images)
+                  ? item.products.images
+                  : [];
+                const price = Number(item.products?.price || 0);
+                const lineTotal = price * item.quantity;
 
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="text-xl font-bold">₦{total.toLocaleString()}</span>
-                </div>
-                <Button className="w-full" size="lg" onClick={() => navigate("/checkout")}>
-                  Proceed to Checkout
-                </Button>
-              </CardContent>
-            </Card>
+                return (
+                  <Card key={item.id} className="border-muted">
+                    <CardContent className="flex gap-4 p-4 sm:gap-6">
+                      <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                        {images.length > 0 ? (
+                          <img
+                            src={images[0]}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center text-muted-foreground text-xs">
+                            No image
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between gap-2">
+                          <div className="min-w-0">
+                            <Link to={`/product/${item.product_id}`}>
+                              <h3 className="font-medium text-sm sm:text-base truncate hover:underline">
+                                {item.products?.name}
+                              </h3>
+                            </Link>
+                            <p className="mt-1 text-sm font-semibold">
+                              ₦{price.toLocaleString()}
+                            </p>
+                          </div>
+                          <p className="hidden text-sm font-semibold whitespace-nowrap sm:block">
+                            ₦{lineTotal.toLocaleString()}
+                          </p>
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex items-center border rounded-full bg-background px-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() =>
+                                updateQuantity.mutate({
+                                  id: item.id,
+                                  quantity: item.quantity - 1,
+                                })
+                              }
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="w-8 text-center text-sm">
+                              {item.quantity}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() =>
+                                updateQuantity.mutate({
+                                  id: item.id,
+                                  quantity: Math.min(
+                                    item.products?.stock || 99,
+                                    item.quantity + 1,
+                                  ),
+                                })
+                              }
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold sm:hidden">
+                              ₦{lineTotal.toLocaleString()}
+                            </p>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive"
+                              onClick={() => removeItem.mutate(item.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </section>
+
+            {/* Order summary */}
+            <section className="lg:sticky lg:top-20 h-fit">
+              <Card>
+                <CardContent className="p-4 sm:p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      Subtotal
+                    </span>
+                    <span className="text-xl font-display font-semibold">
+                      ₦{total.toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Delivery fee and discounts are calculated at checkout.
+                  </p>
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    onClick={() => navigate("/checkout")}
+                  >
+                    Proceed to checkout
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => navigate("/")}
+                  >
+                    Continue shopping
+                  </Button>
+                </CardContent>
+              </Card>
+            </section>
           </div>
         ) : (
-          <div className="text-center py-20">
-            <ShoppingBag className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-lg font-medium">Your cart is empty</p>
+          <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
+            <ShoppingBag className="h-12 w-12 mb-4 text-muted-foreground" />
+            <p className="text-lg font-display font-semibold mb-1">
+              Your cart is empty
+            </p>
+            <p className="text-sm text-muted-foreground mb-4">
+              Add items from the marketplace to see them here.
+            </p>
             <Link to="/">
-              <Button variant="link" className="mt-2">Browse products</Button>
+              <Button variant="link" className="mt-1">
+                Browse products
+              </Button>
             </Link>
           </div>
         )}

@@ -1,16 +1,20 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { Loader2, Package } from "lucide-react";
 
 const Orders = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/login");
@@ -34,6 +38,26 @@ const Orders = () => {
       return data.map((o) => ({ ...o, seller_name: profileMap.get(o.seller_id) || "Unknown" }));
     },
     enabled: !!user,
+  });
+
+  const confirmDelivery = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "delivered" })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Order confirmed as delivered" });
+      queryClient.invalidateQueries({ queryKey: ["my-orders", user?.id] });
+    },
+    onError: (e: any) =>
+      toast({
+        title: "Failed to confirm delivery",
+        description: e.message,
+        variant: "destructive",
+      }),
   });
 
   const statusColors: Record<string, string> = {
@@ -78,6 +102,18 @@ const Orders = () => {
                     </p>
                   ))}
                   <p className="font-semibold text-sm mt-3">Total: ₦{Number(order.total).toLocaleString()}</p>
+                  {order.status !== "delivered" && order.status !== "cancelled" && (
+                    <div className="mt-3 flex justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => confirmDelivery.mutate(order.id)}
+                        disabled={confirmDelivery.isPending}
+                      >
+                        Mark as delivered
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
