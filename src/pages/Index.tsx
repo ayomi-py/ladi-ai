@@ -14,7 +14,7 @@ const Index = () => {
     queryFn: async () => {
       let query = supabase
         .from("products")
-        .select("*, profiles!products_seller_id_fkey(full_name)")
+        .select("*")
         .eq("is_active", true)
         .gt("stock", 0)
         .order("created_at", { ascending: false });
@@ -25,7 +25,15 @@ const Index = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+
+      // Fetch seller names
+      const sellerIds = [...new Set(data.map((p) => p.seller_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", sellerIds);
+      const profileMap = new Map(profiles?.map((p) => [p.user_id, p.full_name]) || []);
+      return data.map((p) => ({ ...p, seller_name: profileMap.get(p.seller_id) || "Unknown Seller" }));
     },
   });
 
@@ -68,7 +76,7 @@ const Index = () => {
                       ? product.images[0]
                       : undefined
                   }
-                  sellerName={product.profiles?.full_name || "Unknown Seller"}
+                  sellerName={product.seller_name}
                 />
               ))}
             </div>
