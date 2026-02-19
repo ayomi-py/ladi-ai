@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
@@ -7,10 +8,18 @@ import CategoryFilter from "@/components/products/CategoryFilter";
 import { Loader2, Package } from "lucide-react";
 
 const Index = () => {
-  const [category, setCategory] = useState("all");
+  const [searchParams] = useSearchParams();
+  const initialCategory = searchParams.get("category") || "all";
+  const initialMin = searchParams.get("minPrice") || "";
+  const initialMax = searchParams.get("maxPrice") || "";
+
+  const [category, setCategory] = useState(initialCategory);
+  const [minPrice, setMinPrice] = useState(initialMin);
+  const [maxPrice, setMaxPrice] = useState(initialMax);
+  const search = searchParams.get("q")?.trim() || "";
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["products", category],
+    queryKey: ["products", category, search, minPrice, maxPrice],
     queryFn: async () => {
       let query = supabase
         .from("products")
@@ -21,6 +30,21 @@ const Index = () => {
 
       if (category !== "all") {
         query = query.eq("category", category as any);
+      }
+
+      if (search) {
+        query = query.or(
+          `name.ilike.%${search}%,description.ilike.%${search}%`,
+        );
+      }
+
+      const min = parseFloat(minPrice);
+      const max = parseFloat(maxPrice);
+      if (!Number.isNaN(min)) {
+        query = query.gte("price", min);
+      }
+      if (!Number.isNaN(max)) {
+        query = query.lte("price", max);
       }
 
       const { data, error } = await query;
@@ -53,8 +77,35 @@ const Index = () => {
         </section>
 
         {/* Categories */}
-        <section className="mb-6">
+        <section className="mb-6 space-y-3">
           <CategoryFilter selected={category} onSelect={setCategory} />
+          <div className="flex flex-wrap gap-3 items-center text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Price:</span>
+              <input
+                type="number"
+                min={0}
+                placeholder="Min"
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
+                className="h-9 w-24 rounded-md border bg-background px-2 text-xs outline-none"
+              />
+              <span className="text-muted-foreground">-</span>
+              <input
+                type="number"
+                min={0}
+                placeholder="Max"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                className="h-9 w-24 rounded-md border bg-background px-2 text-xs outline-none"
+              />
+            </div>
+            {search && (
+              <span className="text-xs text-muted-foreground">
+                Showing results for <span className="font-medium">{search}</span>
+              </span>
+            )}
+          </div>
         </section>
 
         {/* Products Grid */}

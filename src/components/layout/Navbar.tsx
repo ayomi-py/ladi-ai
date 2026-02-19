@@ -1,14 +1,15 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, User, MessageSquare, Menu, X, Search, LogOut, LayoutDashboard } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
 
   const handleSignOut = async () => {
     await signOut();
@@ -29,6 +30,13 @@ const Navbar = () => {
             <input
               type="text"
               placeholder="Search products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  navigate(`/?q=${encodeURIComponent(searchTerm.trim())}`);
+                }
+              }}
               className="w-full h-10 rounded-lg border bg-secondary/50 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -80,6 +88,14 @@ const Navbar = () => {
             <input
               type="text"
               placeholder="Search products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setMobileOpen(false);
+                  navigate(`/?q=${encodeURIComponent(searchTerm.trim())}`);
+                }
+              }}
               className="w-full h-10 rounded-lg border bg-secondary/50 pl-10 pr-4 text-sm outline-none"
             />
           </div>

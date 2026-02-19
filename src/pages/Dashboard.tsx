@@ -25,6 +25,7 @@ const Dashboard = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
   // Form state
   const [name, setName] = useState("");
@@ -140,6 +141,17 @@ const Dashboard = () => {
     setImageFiles([]);
   };
 
+  const startEdit = (product: any) => {
+    setEditingProduct(product);
+    setName(product.name || "");
+    setDescription(product.description || "");
+    setPrice(String(product.price ?? ""));
+    setCategory(product.category || "other");
+    setStock(String(product.stock ?? "1"));
+    setImageFiles([]);
+    setCreateOpen(true);
+  };
+
   const statusColors: Record<string, string> = {
     pending: "bg-warning/20 text-warning",
     confirmed: "bg-primary/20 text-primary",
@@ -163,12 +175,28 @@ const Dashboard = () => {
       <main className="container py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-display font-bold">Seller Dashboard</h1>
-          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <Dialog
+            open={createOpen}
+            onOpenChange={(open) => {
+              setCreateOpen(open);
+              if (!open) {
+                setEditingProduct(null);
+                resetForm();
+              }
+            }}
+          >
             <DialogTrigger asChild>
-              <Button><Plus className="mr-2 h-4 w-4" />New Product</Button>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                New Product
+              </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
-              <DialogHeader><DialogTitle>Create Product</DialogTitle></DialogHeader>
+              <DialogHeader>
+                <DialogTitle>
+                  {editingProduct ? "Edit Product" : "Create Product"}
+                </DialogTitle>
+              </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Name *</Label>
@@ -203,9 +231,15 @@ const Dashboard = () => {
                   <Label>Images</Label>
                   <Input type="file" accept="image/*" multiple onChange={(e) => setImageFiles(Array.from(e.target.files || []))} />
                 </div>
-                <Button onClick={() => createProduct.mutate()} disabled={createProduct.isPending} className="w-full">
-                  {createProduct.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Product
+                <Button
+                  onClick={() => createProduct.mutate()}
+                  disabled={createProduct.isPending}
+                  className="w-full"
+                >
+                  {createProduct.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {editingProduct ? "Save changes" : "Create Product"}
                 </Button>
               </div>
             </DialogContent>
@@ -251,8 +285,23 @@ const Dashboard = () => {
                           <span className="text-xs text-muted-foreground capitalize">{p.category}</span>
                         </div>
                         <div className="flex gap-2 mt-3">
-                          <Button variant="destructive" size="sm" className="flex-1" onClick={() => deleteProduct.mutate(p.id)}>
-                            <Trash2 className="mr-1 h-3 w-3" />Delete
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => startEdit(p)}
+                          >
+                            <Edit2 className="mr-1 h-3 w-3" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => deleteProduct.mutate(p.id)}
+                          >
+                            <Trash2 className="mr-1 h-3 w-3" />
+                            Delete
                           </Button>
                         </div>
                       </CardContent>

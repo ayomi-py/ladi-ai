@@ -29,6 +29,7 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
+  const [canReview, setCanReview] = useState(false);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", id],
@@ -72,6 +73,42 @@ const ProductDetail = () => {
     enabled: !!id,
   });
 
+  useQuery({
+    queryKey: ["can-review", id, user?.id],
+    queryFn: async () => {
+      if (!user || !id) return false;
+
+      // First find all order_ids that include this product
+      const { data: items, error: itemsError } = await supabase
+        .from("order_items")
+        .select("order_id")
+        .eq("product_id", id);
+      if (itemsError) throw itemsError;
+
+      const orderIds = Array.from(
+        new Set((items || []).map((i: any) => i.order_id)),
+      );
+      if (orderIds.length === 0) {
+        setCanReview(false);
+        return false;
+      }
+
+      // Then check if the current user has any delivered order among those
+      const { data: ordersForUser, error: ordersError } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("buyer_id", user.id)
+        .eq("status", "delivered")
+        .in("id", orderIds);
+      if (ordersError) throw ordersError;
+
+      const allowed = !!ordersForUser && ordersForUser.length > 0;
+      setCanReview(allowed);
+      return allowed;
+    },
+    enabled: !!user && !!id,
+  });
+
   const addToCart = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Please sign in");
@@ -105,6 +142,7 @@ const ProductDetail = () => {
   const submitReview = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Please sign in");
+      if (!canReview) throw new Error("You can only review products you have purchased and received");
       const { error } = await supabase.from("reviews").insert({
         product_id: id!,
         user_id: user.id,
@@ -282,7 +320,7 @@ const ProductDetail = () => {
         <section className="mt-12">
           <h2 className="text-xl font-display font-bold mb-6">Reviews</h2>
 
-          {user && product.seller_id !== user.id && (
+          {user && product.seller_id !== user.id && canReview && (
             <Card className="mb-6">
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center gap-1">
@@ -305,6 +343,12 @@ const ProductDetail = () => {
                 </Button>
               </CardContent>
             </Card>
+          )}
+
+          {user && product.seller_id !== user.id && !canReview && (
+            <p className="mb-4 text-sm text-muted-foreground">
+              You can leave a review after your order for this product is marked as delivered.
+            </p>
           )}
 
           {reviews && reviews.length > 0 ? (

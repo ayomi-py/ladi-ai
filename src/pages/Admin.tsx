@@ -73,6 +73,19 @@ const Admin = () => {
     enabled: !!isAdmin,
   });
 
+  const { data: coupons } = useQuery({
+    queryKey: ["admin-coupons"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("coupons")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!isAdmin,
+  });
+
   const toggleProductActive = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
       const { error } = await supabase
@@ -123,6 +136,8 @@ const Admin = () => {
     orders?.reduce((sum: number, o: any) => sum + Number(o.total || 0), 0) || 0;
   const commission = totalRevenue * 0.065;
   const orderCount = orders?.length || 0;
+  const activeCoupons =
+    coupons?.filter((c: any) => c.is_active).length ?? 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -192,7 +207,7 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="users">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-2xl grid-cols-4">
             <TabsTrigger
               value="users"
               className="flex-1 justify-center gap-1"
@@ -213,6 +228,12 @@ const Admin = () => {
             >
               <BarChart3 className="h-4 w-4" />
               Analytics
+            </TabsTrigger>
+            <TabsTrigger
+              value="coupons"
+              className="flex-1 justify-center gap-1"
+            >
+              Coupons
             </TabsTrigger>
           </TabsList>
 
@@ -319,6 +340,48 @@ const Admin = () => {
                   - Platform commission (6.5%):{" "}
                   <strong>₦{commission.toLocaleString()}</strong>
                 </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="coupons" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">
+                  Coupons ({activeCoupons} active)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                {!coupons?.length && (
+                  <p className="text-sm text-muted-foreground">
+                    No coupons defined yet.
+                  </p>
+                )}
+                {coupons?.map((c: any) => (
+                  <div
+                    key={c.id}
+                    className="flex items-center justify-between gap-3 border-b pb-2 last:border-b-0 last:pb-0"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{c.code}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {c.discount_percent}% off ·{" "}
+                        {c.usage_count}/{c.usage_limit ?? "∞"} uses ·{" "}
+                        {c.expires_at
+                          ? `Expires ${new Date(
+                              c.expires_at,
+                            ).toLocaleDateString()}`
+                          : "No expiry"}
+                      </p>
+                    </div>
+                    <Badge
+                      variant={c.is_active ? "default" : "secondary"}
+                      className="text-xs"
+                    >
+                      {c.is_active ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                ))}
               </CardContent>
             </Card>
           </TabsContent>
