@@ -28,6 +28,7 @@ const Profile = () => {
   const [fullName, setFullName] = useState("");
   const [matricNumber, setMatricNumber] = useState("");
   const [department, setDepartment] = useState("");
+  const [hall, setHall] = useState("");
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -117,6 +118,7 @@ const Profile = () => {
       setFullName(profile.full_name || "");
       setMatricNumber(profile.matric_number || "");
       setDepartment(profile.department || "");
+      setHall((profile as any).hall_of_residence || "");
     }
   }, [profile]);
 
@@ -124,7 +126,12 @@ const Profile = () => {
     mutationFn: async () => {
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: fullName, matric_number: matricNumber, department })
+        .update({
+          full_name: fullName,
+          matric_number: matricNumber,
+          department,
+          hall_of_residence: hall || null,
+        } as any)
         .eq("user_id", user!.id);
       if (error) throw error;
     },
@@ -273,13 +280,23 @@ const Profile = () => {
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Department</Label>
-                  <Input
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    placeholder="e.g. Computer Science"
-                  />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Department</Label>
+                    <Input
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      placeholder="e.g. Computer Science"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Hall of residence</Label>
+                    <Input
+                      value={hall}
+                      onChange={(e) => setHall(e.target.value)}
+                      placeholder="e.g. Gideon Troopers"
+                    />
+                  </div>
                 </div>
                 <Button
                   onClick={() => updateProfile.mutate()}

@@ -66,7 +66,7 @@ const Admin = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, total, status, created_at");
+        .select("id, total, status, created_at, seller_id");
       if (error) throw error;
       return data;
     },
@@ -132,12 +132,36 @@ const Admin = () => {
     );
   }
 
+  const COMMISSION_RATE = 0.065;
+
   const totalRevenue =
     orders?.reduce((sum: number, o: any) => sum + Number(o.total || 0), 0) || 0;
-  const commission = totalRevenue * 0.065;
+  const commission = totalRevenue * COMMISSION_RATE;
   const orderCount = orders?.length || 0;
   const activeCoupons =
     coupons?.filter((c: any) => c.is_active).length ?? 0;
+
+  const sellerStats = new Map<
+    string,
+    { orders: number; revenue: number; commission: number }
+  >();
+  (orders || []).forEach((o: any) => {
+    const sellerId = o.seller_id;
+    if (!sellerId) return;
+    const revenue = Number(o.total || 0);
+    const prev = sellerStats.get(sellerId) || {
+      orders: 0,
+      revenue: 0,
+      commission: 0,
+    };
+    const newRevenue = prev.revenue + revenue;
+    const newOrders = prev.orders + 1;
+    sellerStats.set(sellerId, {
+      orders: newOrders,
+      revenue: newRevenue,
+      commission: newRevenue * COMMISSION_RATE,
+    });
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -248,25 +272,44 @@ const Admin = () => {
                     No users found.
                   </p>
                 )}
-                {profiles?.map((p: any) => (
-                  <div
-                    key={p.user_id}
-                    className="flex items-center justify-between text-sm border-b last:border-b-0 pb-2 last:pb-0"
-                  >
-                    <div>
-                      <p className="font-medium">
-                        {p.full_name || "Unnamed user"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {p.department || "No department"} ·{" "}
-                        {p.matric_number || "No matric"}
-                      </p>
+                {profiles?.map((p: any) => {
+                  const stats = sellerStats.get(p.user_id);
+                  return (
+                    <div
+                      key={p.user_id}
+                      className="flex items-center justify-between text-sm border-b last:border-b-0 pb-2 last:pb-0"
+                    >
+                      <div>
+                        <p className="font-medium">
+                          {p.full_name || "Unnamed user"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {p.department || "No department"} ·{" "}
+                          {p.matric_number || "No matric"}
+                        </p>
+                        {stats && (
+                          <p className="mt-1 text-[11px] text-muted-foreground">
+                            Sales:{" "}
+                            <span className="font-medium">
+                              {stats.orders}
+                            </span>{" "}
+                            · Revenue:{" "}
+                            <span className="font-medium">
+                              ₦{stats.revenue.toLocaleString()}
+                            </span>{" "}
+                            · Commission (6.5%):{" "}
+                            <span className="font-medium">
+                              ₦{stats.commission.toLocaleString()}
+                            </span>
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(p.created_at).toLocaleDateString()}
+                      </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(p.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           </TabsContent>

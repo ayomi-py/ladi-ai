@@ -24,14 +24,14 @@ const Login = () => {
     if (error) {
       toast({ title: "Login failed", description: error.message, variant: "destructive" });
     } else {
-      navigate("/");
+      navigate("/home");
     }
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md animate-fade-in">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background via-background to-primary/10 px-4">
+      <div className="w-full max-w-md animate-fade-in drop-shadow-sm">
         <div className="text-center mb-8">
           <Link to="/">
             <h1 className="text-3xl font-display font-bold text-foreground">LADI</h1>

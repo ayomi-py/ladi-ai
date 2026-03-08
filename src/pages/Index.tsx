@@ -1,144 +1,186 @@
-import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
-import ProductCard from "@/components/products/ProductCard";
-import CategoryFilter from "@/components/products/CategoryFilter";
-import { Loader2, Package } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [searchParams] = useSearchParams();
-  const initialCategory = searchParams.get("category") || "all";
-  const initialMin = searchParams.get("minPrice") || "";
-  const initialMax = searchParams.get("maxPrice") || "";
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
-  const [category, setCategory] = useState(initialCategory);
-  const [minPrice, setMinPrice] = useState(initialMin);
-  const [maxPrice, setMaxPrice] = useState(initialMax);
-  const search = searchParams.get("q")?.trim() || "";
-
-  const { data: products, isLoading } = useQuery({
-    queryKey: ["products", category, search, minPrice, maxPrice],
-    queryFn: async () => {
-      let query = supabase
-        .from("products")
-        .select("*")
-        .eq("is_active", true)
-        .gt("stock", 0)
-        .order("created_at", { ascending: false });
-
-      if (category !== "all") {
-        query = query.eq("category", category as any);
-      }
-
-      if (search) {
-        query = query.or(
-          `name.ilike.%${search}%,description.ilike.%${search}%`,
-        );
-      }
-
-      const min = parseFloat(minPrice);
-      const max = parseFloat(maxPrice);
-      if (!Number.isNaN(min)) {
-        query = query.gte("price", min);
-      }
-      if (!Number.isNaN(max)) {
-        query = query.lte("price", max);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-
-      // Fetch seller names
-      const sellerIds = [...new Set(data.map((p) => p.seller_id))];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .in("user_id", sellerIds);
-      const profileMap = new Map(profiles?.map((p) => [p.user_id, p.full_name]) || []);
-      return data.map((p) => ({ ...p, seller_name: profileMap.get(p.seller_id) || "Unknown Seller" }));
-    },
-  });
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/home");
+    }
+  }, [user, loading, navigate]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/40">
       <Navbar />
 
       <main className="container py-6">
         {/* Hero */}
-        <section className="mb-8 text-center py-12">
-          <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-3">
-            Buy & Sell on Campus
+        <section className="mb-10 text-center py-12 rounded-3xl bg-gradient-to-r from-primary/10 via-emerald-50/40 to-primary/5 border">
+          <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-3 tracking-tight">
+            LADI - Babcock Campus Marketplace
           </h1>
-          <p className="text-lg text-muted-foreground max-w-lg mx-auto">
-            LADI is Babcock University's trusted marketplace. Discover great deals from fellow students.
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            A safe, student‑only platform to buy and sell on campus. List items in minutes, discover deals from fellow
+            students, and manage everything from one dashboard.
           </p>
-        </section>
-
-        {/* Categories */}
-        <section className="mb-6 space-y-3">
-          <CategoryFilter selected={category} onSelect={setCategory} />
-          <div className="flex flex-wrap gap-3 items-center text-sm">
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">Price:</span>
-              <input
-                type="number"
-                min={0}
-                placeholder="Min"
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
-                className="h-9 w-24 rounded-md border bg-background px-2 text-xs outline-none"
-              />
-              <span className="text-muted-foreground">-</span>
-              <input
-                type="number"
-                min={0}
-                placeholder="Max"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                className="h-9 w-24 rounded-md border bg-background px-2 text-xs outline-none"
-              />
-            </div>
-            {search && (
-              <span className="text-xs text-muted-foreground">
-                Showing results for <span className="font-medium">{search}</span>
-              </span>
-            )}
+          <div className="mt-6 flex flex-wrap justify-center gap-3 text-sm">
+            <a href="#features" className="underline-offset-4 hover:underline text-primary">
+              Features
+            </a>
+            <a href="#how-it-works" className="underline-offset-4 hover:underline text-primary">
+              How it works
+            </a>
+            <a href="#faq" className="underline-offset-4 hover:underline text-primary">
+              FAQ
+            </a>
+            <a href="#docs" className="underline-offset-4 hover:underline text-primary">
+              Docs
+            </a>
           </div>
         </section>
 
-        {/* Products Grid */}
-        <section>
-          {isLoading ? (
-            <div className="flex justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        {/* Features */}
+        <section id="features" className="mb-12">
+          <h2 className="text-2xl font-display font-bold mb-3 text-center">Features</h2>
+          <p className="text-sm text-muted-foreground mb-6 text-center max-w-2xl mx-auto">
+            LADI combines marketplace basics with campus‑specific workflows: student verification, seller dashboards,
+            messaging, and admin oversight.
+          </p>
+          <div className="grid gap-5 md:grid-cols-3">
+            <div className="rounded-xl border bg-card/80 backdrop-blur p-4 text-left shadow-sm hover:shadow-md transition-shadow">
+              <h3 className="font-semibold mb-1 text-sm">Student‑only marketplace</h3>
+              <p className="text-xs text-muted-foreground">
+                Accounts are tied to student emails, with per‑user profiles for matric number, department, and avatar.
+              </p>
             </div>
-          ) : products && products.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {products.map((product: any) => (
-                <ProductCard
-                  key={product.id}
-                  id={product.id}
-                  name={product.name}
-                  price={Number(product.price)}
-                  image={
-                    Array.isArray(product.images) && product.images.length > 0
-                      ? product.images[0]
-                      : undefined
-                  }
-                  sellerName={product.seller_name}
-                />
-              ))}
+            <div className="rounded-xl border bg-card/80 backdrop-blur p-4 text-left shadow-sm hover:shadow-md transition-shadow">
+              <h3 className="font-semibold mb-1 text-sm">Multi‑vendor selling</h3>
+              <p className="text-xs text-muted-foreground">
+                Any student can become a seller, manage listings, track orders, and see revenue in their dashboard.
+              </p>
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-              <Package className="h-12 w-12 mb-4" />
-              <p className="text-lg font-medium">No products yet</p>
-              <p className="text-sm">Be the first to list something!</p>
+            <div className="rounded-xl border bg-card/80 backdrop-blur p-4 text-left shadow-sm hover:shadow-md transition-shadow">
+              <h3 className="font-semibold mb-1 text-sm">Cart, checkout & coupons</h3>
+              <p className="text-xs text-muted-foreground">
+                Modern cart and checkout flow with seller‑grouped orders, delivery fees, and coupon support.
+              </p>
             </div>
-          )}
+            <div className="rounded-xl border bg-card/80 backdrop-blur p-4 text-left shadow-sm hover:shadow-md transition-shadow">
+              <h3 className="font-semibold mb-1 text-sm">Gated reviews</h3>
+              <p className="text-xs text-muted-foreground">
+                Only buyers with delivered orders can leave ratings and reviews, keeping feedback trustworthy.
+              </p>
+            </div>
+            <div className="rounded-xl border bg-card/80 backdrop-blur p-4 text-left shadow-sm hover:shadow-md transition-shadow">
+              <h3 className="font-semibold mb-1 text-sm">In‑app messaging</h3>
+              <p className="text-xs text-muted-foreground">
+                Real‑time messaging between buyers and sellers so you can clarify details before and after purchase.
+              </p>
+            </div>
+            <div className="rounded-xl border bg-card/80 backdrop-blur p-4 text-left shadow-sm hover:shadow-md transition-shadow">
+              <h3 className="font-semibold mb-1 text-sm">Admin controls</h3>
+              <p className="text-xs text-muted-foreground">
+                Admins can view users, moderate products, inspect revenue analytics, and see all coupons.
+              </p>
+            </div>
+          </div>
         </section>
+
+        {/* How it works */}
+        <section id="how-it-works" className="mb-10">
+          <h2 className="text-2xl font-display font-bold mb-3 text-center">How it works</h2>
+          <div className="grid gap-4 md:grid-cols-3 text-sm">
+            <div className="rounded-xl border bg-card p-4">
+              <p className="text-xs font-semibold text-muted-foreground mb-1">Step 1</p>
+              <h3 className="font-semibold mb-1">Create your account</h3>
+              <p className="text-xs text-muted-foreground">
+                Sign up with your Babcock email, complete your profile, and verify your identity as a student.
+              </p>
+            </div>
+            <div className="rounded-xl border bg-card p-4">
+              <p className="text-xs font-semibold text-muted-foreground mb-1">Step 2</p>
+              <h3 className="font-semibold mb-1">Browse or list products</h3>
+              <p className="text-xs text-muted-foreground">
+                Browse by category, search, and filters - or use the seller dashboard to list your own items for sale.
+              </p>
+            </div>
+            <div className="rounded-xl border bg-card p-4">
+              <p className="text-xs font-semibold text-muted-foreground mb-1">Step 3</p>
+              <h3 className="font-semibold mb-1">Checkout, message, and review</h3>
+              <p className="text-xs text-muted-foreground">
+                Add items to cart, complete checkout, message sellers, and leave reviews after successful delivery.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section id="faq" className="mb-10">
+          <h2 className="text-2xl font-display font-bold mb-3 text-center">FAQ</h2>
+          <div className="max-w-2xl mx-auto space-y-3 text-sm">
+            <details className="rounded-lg border bg-card p-3">
+              <summary className="cursor-pointer font-medium">
+                Who can use LADI?
+              </summary>
+              <p className="mt-2 text-xs text-muted-foreground">
+                LADI is designed for Babcock University students. Authentication is tied to student email addresses,
+                and each account has a matric number and department profile.
+              </p>
+            </details>
+            <details className="rounded-lg border bg-card p-3">
+              <summary className="cursor-pointer font-medium">
+                How do I start selling?
+              </summary>
+              <p className="mt-2 text-xs text-muted-foreground">
+                After signing in, open the seller dashboard, create your first listing, and upload images. Once a
+                listing is active, you&apos;re treated as a seller and can manage orders in the same dashboard.
+              </p>
+            </details>
+            <details className="rounded-lg border bg-card p-3">
+              <summary className="cursor-pointer font-medium">
+                How are payments handled?
+              </summary>
+              <p className="mt-2 text-xs text-muted-foreground">
+                The current environment uses a simulated checkout flow. In production, the checkout is intended to be
+                wired to Paystack for secure payments and automatic order recording.
+              </p>
+            </details>
+            <details className="rounded-lg border bg-card p-3">
+              <summary className="cursor-pointer font-medium">
+                Can I message sellers before buying?
+              </summary>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Yes. Each product page links to an in‑app message thread with the seller so you can ask questions
+                before or after purchase.
+              </p>
+            </details>
+          </div>
+        </section>
+
+        {/* Docs */}
+        <section id="docs" className="mb-10">
+          <h2 className="text-2xl font-display font-bold mb-3 text-center">Docs</h2>
+          <p className="text-sm text-muted-foreground max-w-2xl mx-auto text-center mb-4">
+            For developers and maintainers, the project README documents the architecture, core features, and local
+            setup. Supabase migrations in the <code>supabase/migrations</code> folder define the database schema.
+          </p>
+          <div className="flex justify-center">
+            <a
+              href="https://github.com/YOUR_ORG_OR_USER/YOUR_REPO"
+              className="text-primary underline underline-offset-4 text-sm"
+            >
+              View project docs (README) on GitHub
+            </a>
+          </div>
+        </section>
+
+        {/* Products / dashboard are intentionally hidden on SEO page.
+            Authenticated users are redirected to /home above. */}
       </main>
     </div>
   );

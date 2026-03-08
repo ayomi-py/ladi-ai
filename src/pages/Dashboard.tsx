@@ -39,6 +39,20 @@ const Dashboard = () => {
     if (!authLoading && !user) navigate("/login");
   }, [user, authLoading, navigate]);
 
+  const { data: profile, isLoading: profileLoading } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const { data: myProducts, isLoading: productsLoading } = useQuery({
     queryKey: ["my-products", user?.id],
     queryFn: async () => {
@@ -74,10 +88,19 @@ const Dashboard = () => {
     enabled: !!user,
   });
 
+  const profileComplete =
+    !!profile &&
+    !!profile.full_name &&
+    !!profile.matric_number &&
+    !!profile.department;
+
   const createProduct = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Not authenticated");
       if (!name || !price) throw new Error("Name and price are required");
+       if (!profileComplete) {
+        throw new Error("Complete your profile (name, matric number, department) before listing products");
+      }
 
       // Upload images
       const imageUrls: string[] = [];
@@ -160,7 +183,7 @@ const Dashboard = () => {
     cancelled: "bg-destructive/20 text-destructive",
   };
 
-  if (authLoading || productsLoading) {
+  if (authLoading || productsLoading || profileLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
@@ -173,6 +196,17 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container py-8">
+        {!profileComplete && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Complete your profile (full name, matric number, department) before creating product listings.
+            <button
+              className="ml-2 underline underline-offset-4"
+              onClick={() => navigate("/profile")}
+            >
+              Go to profile
+            </button>
+          </div>
+        )}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-display font-bold">Seller Dashboard</h1>
           <Dialog

@@ -19,7 +19,7 @@ const Navbar = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to={user ? "/home" : "/"} className="flex items-center gap-2">
           <span className="text-2xl font-display font-bold text-primary">LADI</span>
         </Link>
 
@@ -34,7 +34,13 @@ const Navbar = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  navigate(`/?q=${encodeURIComponent(searchTerm.trim())}`);
+                  if (user) {
+                    navigate(
+                      `/home?q=${encodeURIComponent(searchTerm.trim())}`,
+                    );
+                  } else {
+                    navigate("/login");
+                  }
                 }
               }}
               className="w-full h-10 rounded-lg border bg-secondary/50 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -93,7 +99,13 @@ const Navbar = () => {
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   setMobileOpen(false);
-                  navigate(`/?q=${encodeURIComponent(searchTerm.trim())}`);
+                  if (user) {
+                    navigate(
+                      `/home?q=${encodeURIComponent(searchTerm.trim())}`,
+                    );
+                  } else {
+                    navigate("/login");
+                  }
                 }
               }}
               className="w-full h-10 rounded-lg border bg-secondary/50 pl-10 pr-4 text-sm outline-none"

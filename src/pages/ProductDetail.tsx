@@ -112,6 +112,9 @@ const ProductDetail = () => {
   const addToCart = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Please sign in");
+      if (product && product.seller_id === user.id) {
+        throw new Error("You cannot buy your own product");
+      }
       const { data: existing } = await supabase
         .from("cart_items")
         .select("id, quantity")
@@ -267,24 +270,52 @@ const ProductDetail = () => {
 
             {/* Quantity & Cart */}
             {product.stock > 0 && (
-              <div className="flex items-center gap-4">
-                <div className="flex items-center border rounded-lg">
-                  <Button variant="ghost" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <span className="w-10 text-center text-sm font-medium">{quantity}</span>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center border rounded-lg">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="w-10 text-center text-sm font-medium">
+                      {quantity}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        setQuantity(Math.min(product.stock, quantity + 1))
+                      }
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                    onClick={() => addToCart.mutate()}
+                    disabled={
+                      addToCart.isPending ||
+                      !user ||
+                      (!!user && product.seller_id === user.id)
+                    }
+                    className="flex-1"
                   >
-                    <Plus className="h-4 w-4" />
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    {!user
+                      ? "Sign in to buy"
+                      : product.seller_id === user.id
+                        ? "You are the seller"
+                        : "Add to Cart"}
                   </Button>
                 </div>
-                <Button onClick={() => addToCart.mutate()} disabled={addToCart.isPending || !user} className="flex-1">
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  {user ? "Add to Cart" : "Sign in to buy"}
-                </Button>
+                {user && product.seller_id === user.id && (
+                  <p className="text-xs text-muted-foreground">
+                    You cannot purchase your own listing. Switch to another
+                    account to buy this item.
+                  </p>
+                )}
               </div>
             )}
 
