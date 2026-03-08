@@ -94,7 +94,9 @@ const Orders = () => {
                         Seller: {order.seller_name} · {new Date(order.created_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <Badge className={`text-xs ${statusColors[order.status] || ""}`}>{order.status}</Badge>
+                    <Badge className={`text-xs ${statusColors[order.status] || ""}`}>
+                    {order.status === "shipped" ? "Sent" : order.status}
+                  </Badge>
                   </div>
                   {order.order_items?.map((item: any) => (
                     <p key={item.id} className="text-sm text-muted-foreground">
@@ -102,7 +104,7 @@ const Orders = () => {
                     </p>
                   ))}
                   <p className="font-semibold text-sm mt-3">Total: ₦{Number(order.total).toLocaleString()}</p>
-                  {order.status !== "delivered" && order.status !== "cancelled" && (
+                  {order.status === "shipped" && (
                     <div className="mt-3 flex justify-end">
                       <Button
                         size="sm"
@@ -110,7 +112,7 @@ const Orders = () => {
                         onClick={() => confirmDelivery.mutate(order.id)}
                         disabled={confirmDelivery.isPending}
                       >
-                        Mark as delivered
+                        {confirmDelivery.isPending ? "Confirming..." : "Received"}
                       </Button>
                     </div>
                   )}

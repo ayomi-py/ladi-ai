@@ -15,12 +15,12 @@ const Index = () => {
   }, [user, loading, navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/40">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
       <main className="container py-6">
         {/* Hero */}
-        <section className="mb-10 text-center py-12 rounded-3xl bg-gradient-to-r from-primary/10 via-emerald-50/40 to-primary/5 border">
+        <section className="mb-10 text-center py-12 rounded-3xl bg-primary/10 border">
           <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-3 tracking-tight">
             LADI - Babcock Campus Marketplace
           </h1>
@@ -171,7 +171,7 @@ const Index = () => {
           </p>
           <div className="flex justify-center">
             <a
-              href="https://github.com/YOUR_ORG_OR_USER/YOUR_REPO"
+              href="https://github.com/ayomi-py/ladi.git"
               className="text-primary underline underline-offset-4 text-sm"
             >
               View project docs (README) on GitHub

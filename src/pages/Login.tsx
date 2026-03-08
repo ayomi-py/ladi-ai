@@ -30,7 +30,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background via-background to-primary/10 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md animate-fade-in drop-shadow-sm">
         <div className="text-center mb-8">
           <Link to="/">

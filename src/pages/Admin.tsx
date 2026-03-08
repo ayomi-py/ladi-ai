@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,14 +8,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ShieldCheck, Users, PackageSearch, BarChart3 } from "lucide-react";
+import { Loader2, ShieldCheck, Users, PackageSearch, BarChart3, Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+function generateCouponCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let result = "";
+  const arr = new Uint8Array(8);
+  crypto.getRandomValues(arr);
+  for (let i = 0; i < 8; i++) result += chars[arr[i] % 32];
+  return result;
+}
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [createCouponOpen, setCreateCouponOpen] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [discountPercent, setDiscountPercent] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
+  const [usageLimit, setUsageLimit] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/login");
@@ -101,6 +118,55 @@ const Admin = () => {
     onError: (e: any) =>
       toast({
         title: "Update failed",
+        description: e.message,
+        variant: "destructive",
+      }),
+  });
+
+  const createCoupon = useMutation({
+    mutationFn: async () => {
+      let code = couponCode.trim().toUpperCase() || generateCouponCode();
+      const discount = parseFloat(discountPercent);
+      if (isNaN(discount) || discount <= 0 || discount > 100) {
+        throw new Error("Discount must be between 1 and 100");
+      }
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const { data, error } = await supabase
+          .from("coupons")
+          .insert({
+            code,
+            discount_percent: discount,
+            expires_at: expiresAt || null,
+            usage_limit: usageLimit ? parseInt(usageLimit, 10) : null,
+            seller_id: null,
+            is_active: true,
+          })
+          .select()
+          .single();
+        if (!error) return data;
+        if (error.code === "23505" && !couponCode.trim()) {
+          code = generateCouponCode();
+          continue;
+        }
+        throw error;
+      }
+      throw new Error("Could not generate unique code, try again");
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Coupon created",
+        description: `Code: ${data.code}`,
+      });
+      setCreateCouponOpen(false);
+      setCouponCode("");
+      setDiscountPercent("");
+      setExpiresAt("");
+      setUsageLimit("");
+      queryClient.invalidateQueries({ queryKey: ["admin-coupons"] });
+    },
+    onError: (e: any) =>
+      toast({
+        title: "Failed to create coupon",
         description: e.message,
         variant: "destructive",
       }),
@@ -389,10 +455,89 @@ const Admin = () => {
 
           <TabsContent value="coupons" className="mt-4">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-sm">
                   Coupons ({activeCoupons} active)
                 </CardTitle>
+                <Dialog open={createCouponOpen} onOpenChange={setCreateCouponOpen}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCreateCouponOpen(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Create coupon
+                  </Button>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create coupon</DialogTitle>
+                    </DialogHeader>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        createCoupon.mutate();
+                      }}
+                      className="space-y-4"
+                    >
+                      <div>
+                        <Label htmlFor="coupon-code">Code (optional)</Label>
+                        <Input
+                          id="coupon-code"
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value)}
+                          placeholder="Leave blank to auto-generate"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="discount">Discount % (required)</Label>
+                        <Input
+                          id="discount"
+                          type="number"
+                          min="1"
+                          max="100"
+                          step="0.01"
+                          value={discountPercent}
+                          onChange={(e) => setDiscountPercent(e.target.value)}
+                          placeholder="e.g. 10"
+                          required
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="expires">Expires at (optional)</Label>
+                        <Input
+                          id="expires"
+                          type="datetime-local"
+                          value={expiresAt}
+                          onChange={(e) => setExpiresAt(e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="usage-limit">Usage limit (optional)</Label>
+                        <Input
+                          id="usage-limit"
+                          type="number"
+                          min="0"
+                          value={usageLimit}
+                          onChange={(e) => setUsageLimit(e.target.value)}
+                          placeholder="0 = unlimited"
+                          className="mt-1"
+                        />
+                      </div>
+                      <Button
+                        type="submit"
+                        disabled={createCoupon.isPending}
+                      >
+                        {createCoupon.isPending && (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        )}
+                        Create
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 {!coupons?.length && (

@@ -368,7 +368,7 @@ const Dashboard = () => {
                           </p>
                         </div>
                         <Badge className={`text-xs ${statusColors[order.status] || ""}`}>
-                          {order.status}
+                          {order.status === "shipped" ? "Sent" : order.status}
                         </Badge>
                       </div>
                       {order.order_items?.map((item: any) => (
@@ -387,8 +387,7 @@ const Dashboard = () => {
                             <SelectContent>
                               <SelectItem value="pending">Pending</SelectItem>
                               <SelectItem value="confirmed">Confirmed</SelectItem>
-                              <SelectItem value="shipped">Shipped</SelectItem>
-                              <SelectItem value="delivered">Delivered</SelectItem>
+                              <SelectItem value="shipped">Sent</SelectItem>
                               <SelectItem value="cancelled">Cancelled</SelectItem>
                             </SelectContent>
                           </Select>
