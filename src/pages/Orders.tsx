@@ -72,7 +72,7 @@ const Orders = () => {
       if (!order) throw new Error("Order not found");
       if (!reportText.trim()) throw new Error("Describe the issue");
 
-      const { error } = await supabase.from("reports").insert({
+      const { error } = await (supabase as any).from("reports").insert({
         reporter_id: user.id,
         reported_user_id: order.seller_id,
         order_id: order.id,

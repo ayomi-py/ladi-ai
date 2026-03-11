@@ -104,6 +104,9 @@ const Dashboard = () => {
        if (!profileComplete) {
         throw new Error("Complete your profile (name, matric number, department) before listing products");
       }
+      if (!editingProduct && imageFiles.length === 0) {
+        throw new Error("Add at least one product image");
+      }
 
       // Upload images
       const imageUrls: string[] = [];
@@ -165,7 +168,7 @@ const Dashboard = () => {
       if (!order) throw new Error("Order not found");
       if (!reportText.trim()) throw new Error("Describe the issue");
 
-      const { error } = await supabase.from("reports").insert({
+      const { error } = await (supabase as any).from("reports").insert({
         reporter_id: user.id,
         reported_user_id: order.buyer_id,
         order_id: order.id,
@@ -209,6 +212,7 @@ const Dashboard = () => {
     setPrice(String(product.price ?? ""));
     setCategory(product.category || "other");
     setStock(String(product.stock ?? "1"));
+    // Keep existing images unless user selects new ones
     setImageFiles([]);
     setCreateOpen(true);
   };
@@ -300,8 +304,22 @@ const Dashboard = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Images</Label>
-                  <Input type="file" accept="image/*" multiple onChange={(e) => setImageFiles(Array.from(e.target.files || []))} />
+                  <Label>Images {editingProduct ? "" : "*"}</Label>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    required={!editingProduct}
+                    onChange={(e) =>
+                      setImageFiles(Array.from(e.target.files || []))
+                    }
+                  />
+                  {editingProduct && (
+                    <p className="text-xs text-muted-foreground">
+                      Leave empty to keep existing images. Select new images to
+                      replace them.
+                    </p>
+                  )}
                 </div>
                 <Button
                   onClick={() => createProduct.mutate()}
