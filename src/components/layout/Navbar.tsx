@@ -106,8 +106,8 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-2">
+        {/* Main Nav (icons always visible, including mobile) */}
+        <nav className="flex items-center gap-2">
           {user ? (
             <>
               <Link to="/messages">
